@@ -93,7 +93,7 @@ tfoot td{font-weight:600;border:0}
 <body>
 <div class="w" id="app"></div>
 <script>
-const SB='https://pyhpddjoukidpydtvprp.supabase.co', KEY='sb_publishable_CwUtz0oBSg6f2nGkvs76Dg_OFmj0hHN', WEB=location.origin+location.pathname.replace(/painel\.html$/,'');
+const SB='https://zumcshmqwwhvlnsdtpjo.supabase.co', KEY='sb_publishable_RxGIQftz2ECn83uEQvsrmg_NEbq2u6J', WEB=location.origin+location.pathname.replace(/painel\.html$/,'');
 const $=s=>document.querySelector(s);
 const brl=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const nf=v=>(+v||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
@@ -126,7 +126,7 @@ async function load(silent){ try{ await notifs(silent); const r=await rpc('oc_li
   const novos=ROWS.filter(x=>x.status==='respondida'&&!before.has(x.token+x.respondido_em)); if(silent&&novos.length){ toast(`${novos[0].contato||novos[0].fornecedor} respondeu à ${novos[0].numero}`); try{ if(Notification.permission==='granted') new Notification('Fornecedor respondeu',{body:`${novos[0].fornecedor} · ${novos[0].numero} · ${CL[novos[0].classe]||''}`}); }catch(_){ } }
   document.title=(ROWS.filter(x=>x.status==='respondida').length?'('+ROWS.filter(x=>x.status==='respondida').length+') ':'')+'Painel de Compras · TSFF'; draw(); }
   catch(e){ if(/permiss/.test(e.message)){ PASS=''; LS.set('tsff-tok',''); if(LEG){ LS.set('tsff-oc-pass',''); return loginLeg('Senha incorreta.'); } login('Sua sessão expirou. Entre de novo.'); } else if(!silent) $('#app').innerHTML=HEAD()+`<div class="card">Não consegui falar com o banco: ${esc(e.message)}</div>`; } }
-function odata(o){ const A=o.aprovacao||{}, R=o.resposta||{}; return {d:A.data||R.data||'',t:A.turno||R.turno||''}; }
+function odata(o){ const A=o.aprovacao||{}, R=o.resposta||{}; let d=A.data||R.data||''; if(!d){ const m=String(A.entrega||R.entrega||o.entrega||'').match(/(\d{1,2})\/(\d{1,2})/); if(m){ const n=new Date(); d=n.getFullYear()+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); } } return {d,t:A.turno||R.turno||''}; }
 function dl(d,tu){ if(!d) return 'sem data'; const x=new Date(d+'T12:00:00'); return ['dom','seg','ter','qua','qui','sex','sáb'][x.getDay()]+' '+d.slice(8,10)+'/'+d.slice(5,7)+(tu?' · '+tu:''); }
 function calHTML(L){ const days=[], t0=new Date(); t0.setHours(12,0,0,0); for(let i=0;i<14;i++){ const x=new Date(t0.getTime()+i*864e5); days.push(x.toISOString().slice(0,10)); } const td=days[0];
   const sem=L.filter(o=>!odata(o).d);
