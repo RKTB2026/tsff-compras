@@ -94,6 +94,8 @@ async function rpc(fn,args){ const r=await fetch(SB+'/rest/v1/rpc/'+fn,{method:'
 const P=new URLSearchParams(location.search), H=new URLSearchParams((location.hash||'').replace(/^#/,''));
 const TK=P.get('t')||H.get('t'), VN=P.get('v')||H.get('v'), VC=P.get('c')||H.get('c');
 let O=null, A=null;
+function pdata(s){ const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})/); if(!m) return ''; const n=new Date(), y=(+m[2]<n.getMonth()+1-6)?n.getFullYear()+1:n.getFullYear(); return y+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0'); }
+function dlabel(d,t){ if(!d) return ''; const x=new Date(d+'T12:00:00'); return ['dom','seg','ter','qua','qui','sex','sáb'][x.getDay()]+' '+d.slice(8,10)+'/'+d.slice(5,7)+(t?' · '+t:''); }
 function fail(t,p){ $('#bar').hidden=true; $('#app').innerHTML=HEAD('')+`<div class="msg"><div class="ic x">!</div><h2>${t}</h2><p>${p||''}</p></div>`; }
 
 /* ---------- fornecedor: confere e responde ---------- */
@@ -102,7 +104,7 @@ async function abrir(){ try{ O=await rpc('oc_abrir',{p_token:TK}); }catch(e){ re
   if(O.status==='cancelada') return fail('Esta ordem foi cancelada','Não é preciso entregar nada desta ordem.');
   if(O.status==='aprovada') return enviado(O.resposta&&O.resposta.classe,true);
   const R=O.resposta||{};
-  A={itens:O.itens.map((i,k)=>{ const r=(R.itens||[])[k]; return r?{q:+r.q,p:+r.p,no:!!r.no,ob:r.ob||''}:{q:+i.q,p:+i.p,no:false,ob:''}; }),entrega:R.entrega||O.entrega||'',nome:R.nome||O.contato||'',obs:R.obs||''};
+  A={itens:O.itens.map((i,k)=>{ const r=(R.itens||[])[k]; return r?{q:+r.q,p:+r.p,no:!!r.no,ob:r.ob||''}:{q:+i.q,p:+i.p,no:false,ob:''}; }),entrega:R.entrega||O.entrega||'',data:R.data||pdata(O.entrega),turno:R.turno||'',nome:R.nome||O.contato||'',obs:R.obs||''};
   draw(!!O.resposta); }
 const ch=(i,a)=>a.no||Math.abs(a.q-i.q)>0.0005||Math.abs(a.p-i.p)>0.005;
 function tot(){ return O.itens.reduce((s,i,k)=>{ const a=A.itens[k]; return s+(a.no?0:a.q*a.p); },0); }
@@ -115,14 +117,14 @@ function itemHTML(i,k){ const a=A.itens[k], c=ch(i,a); const d=[]; if(!a.no){ if
 function draw(again){ $('#app').innerHTML=HEAD(O.numero)+`<h1>Olá, ${esc(O.contato||'fornecedor')}!</h1><p class="lead">${again?'Você já respondeu esta ordem. Se precisar, ajuste e envie de novo enquanto ela não for aprovada.':'Confira cada item. Se a quantidade ou o preço mudou, ajuste aqui. Se não tiver o produto, toque em “Não tenho”. No fim, toque em <b>Salvar e enviar</b>.'}</p>
   <div class="meta"><div><small>Fornecedor</small><b>${esc(O.fornecedor)}</b></div><div><small>Entrega pedida</small><b>${esc(O.entrega||'')}</b></div><div><small>Pagamento</small><b>${esc(O.pagamento||'')}</b></div></div>
   ${O.itens.map(itemHTML).join('')}
-  <div class="gen"><label class="f">Data de entrega<input data-g="entrega" value="${esc(A.entrega)}" placeholder="ex.: qua 04/11"></label><label class="f">Seu nome<input data-g="nome" value="${esc(A.nome)}"></label><label class="f full">Observações gerais<textarea data-g="obs" placeholder="Opcional">${esc(A.obs)}</textarea></label></div>`;
+  <div class="gen"><label class="f full">Quando você vai entregar?<input type="date" data-g="data" value="${esc(A.data)}"></label><div class="full"><span style="font-size:12px;color:var(--steel)">Turno da entrega</span><div class="row" style="margin-top:4px">${['manhã','tarde'].map(x=>`<button type="button" class="tg" data-turno="${x}" aria-pressed="${A.turno===x}" style="${A.turno===x?'background:#e9f5ef;border-color:#9cc7ad;color:#237a55':''}">${x==='manhã'?'Manhã (8h–12h)':'Tarde (13h–17h)'}</button>`).join('')}</div></div><label class="f">Seu nome<input data-g="nome" value="${esc(A.nome)}"></label><label class="f full">Observações gerais<textarea data-g="obs" placeholder="Opcional">${esc(A.obs)}</textarea></label></div>`;
   barDraw(); }
 function barDraw(){ const s=sum(), b=$('#bar'); b.hidden=false; b.innerHTML=`<div class="in"><div class="tt"><b>${brl(tot())}</b><small>${s.f||s.m?[s.m?s.m+' alteraç'+(s.m>1?'ões':'ão'):'',s.f?s.f+' em falta':''].filter(Boolean).join(' · '):'tudo como pedido'}</small></div><button type="button" class="go" id="go">Salvar e enviar</button></div>`; }
 function redraw(k){ const el=$('#it'+k); if(el){ el.outerHTML=itemHTML(O.itens[k],k); } barDraw(); }
 document.addEventListener('input',e=>{ const t=e.target; if(!A) return; if(t.dataset.k!=null){ const a=A.itens[+t.dataset.k]; if(t.dataset.f==='ob'){ a.ob=t.value; return; } a[t.dataset.f]=parseFloat(String(t.value).replace(',','.'))||0; barDraw(); clearTimeout(redraw.t); redraw.t=setTimeout(()=>{ const id=document.activeElement&&document.activeElement.dataset; const k=+t.dataset.k, f=t.dataset.f; redraw(k); const n=document.querySelector(`[data-k="${k}"][data-f="${f}"]`); if(n&&id&&id.k==k){ n.focus(); const v=n.value; n.value=''; n.value=v; } },700); } if(t.dataset.g){ A[t.dataset.g]=t.value; } });
-document.addEventListener('click',async e=>{ const n=e.target.closest('[data-no]'); if(n){ const k=+n.dataset.no; A.itens[k].no=!A.itens[k].no; redraw(k); return; }
-  if(e.target.closest('#go')){ const b=$('#go'); b.disabled=true; b.textContent='Enviando…';
-    try{ const cl=await rpc('oc_responder',{p_token:TK,p:{itens:A.itens,entrega:A.entrega,nome:A.nome,obs:A.obs,total:tot()}}); enviado(cl,false); }
+document.addEventListener('click',async e=>{ const tu=e.target.closest('[data-turno]'); if(tu){ A.turno=tu.dataset.turno; document.querySelectorAll('[data-turno]').forEach(b=>{ const on=b.dataset.turno===A.turno; b.setAttribute('aria-pressed',on); b.style.cssText=on?'background:#e9f5ef;border-color:#9cc7ad;color:#237a55':''; }); return; } const n=e.target.closest('[data-no]'); if(n){ const k=+n.dataset.no; A.itens[k].no=!A.itens[k].no; redraw(k); return; }
+  if(e.target.closest('#go')){ if(!A.data||!A.turno){ alert('Informe o dia e o turno (manhã ou tarde) em que você vai entregar.'); const d=document.querySelector('[data-g="data"]'); if(d) d.scrollIntoView({behavior:'smooth',block:'center'}); return; } A.entrega=dlabel(A.data,A.turno); const b=$('#go'); b.disabled=true; b.textContent='Enviando…';
+    try{ const cl=await rpc('oc_responder',{p_token:TK,p:{itens:A.itens,entrega:A.entrega,data:A.data,turno:A.turno,nome:A.nome,obs:A.obs,total:tot()}}); enviado(cl,false); }
     catch(err){ b.disabled=false; b.textContent='Salvar e enviar'; alert('Não foi possível enviar: '+err.message); } }
   if(e.target.closest('[data-reabrir]')) abrir(); });
 function enviado(cl,ap){ $('#bar').hidden=true; const s=O&&A?sum():{f:0,m:0};
