@@ -194,7 +194,7 @@ document.addEventListener('click',async e=>{ const g=e.target.closest('[data-pla
 document.addEventListener('change',e=>{ const k=e.target.dataset&&e.target.dataset.rj; if(k==null) return; RJ[k]=!e.target.checked; drawOC(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='pw') entrar(!!$('#nm')); });
 document.addEventListener('click',e=>{ if(DD&&!e.target.closest('.dd')&&!e.target.closest('[data-dd]')){ DD=null; draw(); } });
-async function start(){ NOVA=decNova(); try{ await me(); }catch(e){ PASS=''; LS.set('tsff-tok',''); return login(/permiss/.test(e.message)?'Entre para continuar.':e.message); } $('#app').innerHTML=HEAD()+'<p class="cap" style="margin-top:20px">Carregando…</p>'; await load(); }
+async function start(){ NOVA=decNova(); if(/usuarios/.test(location.hash)) VIEW='us'; try{ await me(); }catch(e){ PASS=''; LS.set('tsff-tok',''); return login(/permiss/.test(e.message)?'Entre para continuar.':e.message); } $('#app').innerHTML=HEAD()+'<p class="cap" style="margin-top:20px">Carregando…</p>'; await load(); }
 setInterval(()=>{ if(PASS&&!document.hidden) load(true); },30000);
 document.addEventListener('visibilitychange',()=>{ if(PASS&&!document.hidden) load(true); });
 if(PASS) start(); else { NOVA=decNova(); login(); }
