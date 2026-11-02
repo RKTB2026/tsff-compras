@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>TSFF · ponte</title></head>
+<body>
+<script>
+/* Ponte entre o planner (no Claude) e o banco de compras: o planner manda a chamada, esta página fala com o Supabase e devolve o resultado. */
+const SB='https://pyhpddjoukidpydtvprp.supabase.co', KEY='sb_publishable_CwUtz0oBSg6f2nGkvs76Dg_OFmj0hHN';
+const OK=new Set(['oc_setup','oc_criar','oc_lista','oc_aprovar','oc_cancelar','oc_validar']);
+addEventListener('message',async e=>{ const d=e.data||{}; if(d.t!=='tsffRpc'||!OK.has(d.fn)) return; let out;
+  try{ const r=await fetch(SB+'/rest/v1/rpc/'+d.fn,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(d.args||{})}); const tx=await r.text(); let j=null; try{ j=tx?JSON.parse(tx):null; }catch(_){ }
+    out=r.ok?{ok:true,data:j}:{ok:false,err:(j&&(j.message||j.hint))||('erro '+r.status),code:r.status}; }
+  catch(err){ out={ok:false,err:'sem conexão com o banco',net:true}; }
+  e.source.postMessage(Object.assign({t:'tsffRpcR',id:d.id},out),'*'); });
+parent.postMessage({t:'tsffBridge',ready:true},'*');
+</script>
+</body></html>
